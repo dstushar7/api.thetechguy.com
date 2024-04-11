@@ -1,6 +1,5 @@
-from flask import Flask, jsonify
-
-app = Flask(__name__)
+from flask import jsonify
+from app import app
 
 @app.route('/')
 def index():
@@ -10,6 +9,9 @@ def index():
 @app.route('/home')
 def home():
     return jsonify({"message": "This is the homepage!"})
+
+import app.controller.user_controller as user
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,28 +1,47 @@
 # app/controllers/user_controller.py
 
-from flask import jsonify
+from flask import jsonify, request, session
 from app import app
+from app.service.user_service import UserService
+from app.service.auth_service import AuthService
 
-@app.route('/users')
-def get_users():
-    # Sample data
-    users = [
-        {"id": 1, "name": "John"},
-        {"id": 2, "name": "Alice"},
-        {"id": 3, "name": "Bob"}
-    ]
-    return jsonify(users)
+auth_service = AuthService()
 
-@app.route('/users/<int:user_id>')
-def get_user(user_id):
-    # Sample data
-    users = {
-        1: {"id": 1, "name": "John"},
-        2: {"id": 2, "name": "Alice"},
-        3: {"id": 3, "name": "Bob"}
-    }
-    user = users.get(user_id)
+
+@app.route('/register', methods=['POST'])
+def register():
+    # Parse request data
+    data = request.json
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    role_id = data.get('role_id')  # Retrieve the role from the request data
+
+    # Validate input data
+    if not username or not email or not password or not role_id:
+        return jsonify({'error': 'Please provide username, role, email, and password'}), 400
+
+    # Register user using the UserService
+    return UserService.register_user(username, email, password, role_id)
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    # Parse login credentials from request
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    # Authenticate user
+    user = auth_service.authenticate_user(username, password)
     if user:
-        return jsonify(user)
+        # Generate JWT token for the authenticated user
+        token = auth_service.generate_jwt_token(user.id)
+
+        # Create session for the user
+        session['user_id'] = user.id
+        session.permanent = True  # Set session to be permanent (e.g., valid for 1 day)
+        
+        return jsonify({'token': token, 'message': 'Login successful'}), 200
     else:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({'error': 'Invalid username or password'}), 401

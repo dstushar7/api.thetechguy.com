@@ -4,6 +4,8 @@ from flask import jsonify, request, session
 from app import app
 from app.service.user_service import UserService
 from app.service.auth_service import AuthService
+from app.auth.auth import role_required
+from flask_jwt_extended import jwt_required
 
 auth_service = AuthService()
 
@@ -45,3 +47,18 @@ def login():
         return jsonify({'token': token, 'message': 'Login successful'}), 200
     else:
         return jsonify({'error': 'Invalid username or password'}), 401
+    
+
+@app.route('/admin/dashboard')
+@jwt_required()
+@role_required('Admin')
+def admin_dashboard():
+    # Only admin users can access this route
+    return jsonify({'message': 'Welcome to the admin dashboard'})
+
+@app.route('/visitor/home')
+@jwt_required()
+@role_required('Visitor','Admin')
+def visitor_home():
+    # Only visitor users can access this route
+    return jsonify({'message': 'Welcome to the user home page'})
